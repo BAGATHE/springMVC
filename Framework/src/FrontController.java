@@ -3,22 +3,31 @@ package controller;
 import javax.servlet.http.*;  
 import javax.servlet.*;  
 import java.io.*;
+<<<<<<< HEAD
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import annotation.*;
+=======
+
+>>>>>>> 25f3bc6cd8171259407b539fa513c1df5c1a9c39
 /**
  *
  * @author Pc
  */
 public class FrontController extends HttpServlet {
+<<<<<<< HEAD
     private List<Class<?>> listController;
+=======
+
+>>>>>>> 25f3bc6cd8171259407b539fa513c1df5c1a9c39
     /**
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
+<<<<<<< HEAD
     private void  getController()throws Exception{
         String packageToScan = getServletConfig().getInitParameter("packageController");
         listController = new ArrayList<>();
@@ -47,14 +56,29 @@ public class FrontController extends HttpServlet {
                         e.getStackTrace();
                 }
         }
+=======
+>>>>>>> 25f3bc6cd8171259407b539fa513c1df5c1a9c39
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
+<<<<<<< HEAD
             out.print("ato");
               for (Class<?> class1 : listController) {
                 out.println("<h2> voici "+class1.getSimpleName()+"</h2>");    
         }
+=======
+          
+            out.println("<!DOCTYPE html>");
+            out.println("<html>");
+            out.println("<head>");
+            out.println("<title>Servlet FrontController</title>");            
+            out.println("</head>");
+            out.println("<body>");
+            out.println("<h1>Servlet FrontController at " + request.getContextPath() + "</h1>");
+            out.println("</body>");
+            out.println("</html>");
+>>>>>>> 25f3bc6cd8171259407b539fa513c1df5c1a9c39
         }
     }
 
