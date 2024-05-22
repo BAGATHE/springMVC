@@ -43,34 +43,20 @@ public class Util {
 
 
     public static HashMap<String, Mapping> getListControllerWithAnnotationMethodGet(String packageController, ServletConfig servletConfig) throws Exception {
+        List<Class<?>> controllers = Util.getListeClass(packageController,servletConfig);
         HashMap<String, Mapping> myHashMap = new HashMap<>();
-        String packageToScan = servletConfig.getInitParameter(packageController);
-        String path = Thread.currentThread().getContextClassLoader().getResource(packageToScan.replace('.', '/'))
-                .getPath();
-        String decodedPath = URLDecoder.decode(path, "UTF-8");
-        File packageDir = new File(decodedPath);
-
-        // Parcourir tous les fichiers dans le répertoire du package
-        File[] files = packageDir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile() && file.getName().endsWith(".class")) {
-                    String className = packageToScan + "." + file.getName().replace(".class", "");
-                    Class<?> clazz = Class.forName(className);
-                    if (clazz.isAnnotationPresent(Controller.class)) {
-                          // Vérification des annotations @Get sur les méthodes du contrôleur
-                          for (Method method : clazz.getDeclaredMethods()) {
-                            if (method.isAnnotationPresent(Get.class)) {
-                                Get getAnnotation = method.getAnnotation(Get.class);
-                                String url = getAnnotation.value();
-                                Mapping mapping = new Mapping(clazz.getName(), method.getName());
-                                myHashMap.put(url, mapping);
-                            }
-                        }
-                    }
+        for (Class<?> controller : controllers) {
+            for (Method method : controller.getDeclaredMethods()) {
+                // Vérification des annotations @Get sur les méthodes du contrôle
+                if (method.isAnnotationPresent(Get.class)) {
+                    Get getAnnotation = method.getAnnotation(Get.class);
+                    String url = getAnnotation.value();
+                    Mapping mapping = new Mapping(controller.getName(), method.getName());
+                    myHashMap.put(url, mapping);
                 }
             }
         }
+        
         return myHashMap;
     }
 }
