@@ -36,8 +36,7 @@ public class FrontController extends HttpServlet {
 
     public void init() throws ServletException{
         try {
-            //initVariable();
-            myHashMap = Util.getListControllerWithAnnotationMethodGet("packageController", getServletConfig());
+            initVariable();
         } catch (Exception e) {
             e.getStackTrace();
         }
@@ -55,8 +54,6 @@ public class FrontController extends HttpServlet {
             //url apres le context
             String pathInfo = requestURI.substring(contextPath.length());
 
-            out.print(pathInfo);
-            out.print("<hr>");
             int size = myHashMap.size();
             for (String key : myHashMap.keySet()) {
                 if(key.equals(pathInfo)){
