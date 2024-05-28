@@ -15,6 +15,7 @@ import annotation.Controller;
 import annotation.Get;
 import controller.FrontController;
 import java.util.HashMap;
+import java.lang.reflect.*;
 
 public class Util {
     public static List<Class<?>> getListeClass(String packageController, ServletConfig servletConfig) throws Exception {
@@ -51,7 +52,7 @@ public class Util {
                 if (method.isAnnotationPresent(Get.class)) {
                     Get getAnnotation = method.getAnnotation(Get.class);
                     String url = getAnnotation.value();
-                    Mapping mapping = new Mapping(controller.getName(), method.getName());
+                    Mapping mapping = new Mapping(controller,controller.getName(), method.getName());
                     myHashMap.put(url, mapping);
                 }
             }
@@ -59,4 +60,13 @@ public class Util {
         
         return myHashMap;
     }
+
+    public static String executeMethod(String className,String methodName) throws Exception{
+        Class<?> myclass = Class.forName(className);
+        Method method = myclass.getMethod(methodName,new Class[0]);
+        Object instance = myclass.newInstance();
+        String result = (String)method.invoke(instance,new Object[0]);
+        return result;
+    }
+
 }
