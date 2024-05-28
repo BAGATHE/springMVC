@@ -61,7 +61,7 @@ public class FrontController extends HttpServlet {
                 out.print("URL: " + key + ", Mapping: " + map.toString());
                 out.print("<br>");
                 String result = Util.executeMethod(map.getClassName(),map.getMethodName());
-                out.print("Result of method  => " + map.getMethodName()  +" => "+result);
+                out.print("Result of invocation method   => " + map.getMethodName()  +" => "+result);
                 }
             }
 
