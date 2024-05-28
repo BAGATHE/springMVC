@@ -11,7 +11,7 @@ import utility.Util;
 import utility.Mapping;
 import java.util.HashMap;
 import javax.servlet.annotation.WebServlet;
-
+import java.lang.reflect.*;
 /**
  *
  * @author Pc
@@ -59,6 +59,9 @@ public class FrontController extends HttpServlet {
                 if(key.equals(pathInfo)){
                 Mapping map = myHashMap.get(key);
                 out.print("URL: " + key + ", Mapping: " + map.toString());
+                out.print("<br>");
+                String result = Util.executeMethod(map.getClassName(),map.getMethodName());
+                out.print("Result of method  => " + map.getMethodName()  +" => "+result);
                 }
             }
 

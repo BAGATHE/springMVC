@@ -1,19 +1,28 @@
 package utility;
 public class Mapping {
-    // Attributs de la classe
-    private String className;
-    private String methodName;
-
-    // Constructeur pour initialiser les attributs
-    public Mapping(String className, String methodName) {
+  private Object obj;
+  private String className;
+  private String methodName;
+  
+ // Constructeur pour initialiser les attributs
+  public Mapping(Object ob,String className, String methodName) {
+        this.setObj(ob);
         this.setClassName(className);
         this.setMethodName(methodName);
-    }
+  }
 
-    // Getters et setters pour les attributs
-    public String getClassName() {
+// Getters et setters pour les attributs    
+  public Object getObj(){
+    return obj;
+  }
+
+  public void setObj(Object obj){
+    this.obj = obj;
+  }
+
+  public String getClassName() {
         return className;
-    }
+  }
 
     public void setClassName(String className) {
         this.className = className;
@@ -33,4 +42,5 @@ public class Mapping {
                 ", methodName='" + methodName + '\'' +
                 '}';
     }
+    
 }
