@@ -52,7 +52,7 @@ public class Util {
                 if (method.isAnnotationPresent(Get.class)) {
                     Get getAnnotation = method.getAnnotation(Get.class);
                     String url = getAnnotation.value();
-                    Mapping mapping = new Mapping(controller,controller.getName(), method.getName());
+                    Mapping mapping = new Mapping(controller.getName(), method.getName());
                     myHashMap.put(url, mapping);
                 }
             }
