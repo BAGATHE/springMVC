@@ -9,6 +9,7 @@ import java.util.List;
 import annotation.*;
 import utility.Util;
 import utility.Mapping;
+import utility.ModelView;
 import java.util.HashMap;
 import javax.servlet.annotation.WebServlet;
 import java.lang.reflect.*;
@@ -44,8 +45,7 @@ public class FrontController extends HttpServlet {
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        PrintWriter out = response.getWriter();
+        //response.setContentType("text/html;charset=UTF-8");
         try{
             //url apres nom de domaine
             String requestURI = request.getRequestURI();
@@ -53,24 +53,36 @@ public class FrontController extends HttpServlet {
             String contextPath = request.getContextPath();
             //url apres le context
             String pathInfo = requestURI.substring(contextPath.length());
-
-            int size = myHashMap.size();
             for (String key : myHashMap.keySet()) {
                 if(key.equals(pathInfo)){
                 Mapping map = myHashMap.get(key);
-                out.print("URL: " + key + ", Mapping: " + map.toString());
-                out.print("<br>");
-                String result = Util.executeMethod(map.getClassName(),map.getMethodName());
-                out.print("Result of invocation method   => " + map.getMethodName()  +" => "+result);
+                Object result = Util.executeMethod(map.getClassName(),map.getMethodName());
+                if(result instanceof ModelView){
+                    ModelView modelview = (ModelView) result;
+                    HashMap<String, Object> dataInHashmap = modelview.getData();
+                    for (String keyInData : dataInHashmap.keySet()) {
+                        request.setAttribute(keyInData,dataInHashmap.get(keyInData));
+                    }
+                    String redirection = modelview.getUrl();
+                    redirection += ".jsp";
+                    if (!response.isCommitted()) {
+                        try {
+                            RequestDispatcher dispatcher = request.getRequestDispatcher(redirection);
+                            dispatcher.forward(request, response);
+                        } catch (Exception e) {
+                            e.printStackTrace(); // Log l'exception dans la réponse pour le débogage
+                        }
+                    } else {
+                        System.out.println("Response is already committed.");
+                    }
+                } else {
+                    System.out.println("result is not instance of ModelView");
+                }
+                return;
                 }
             }
-
-
-
-            
-        
         }catch(Exception e){
-
+            e.printStackTrace();
         }
     }
 

@@ -61,11 +61,11 @@ public class Util {
         return myHashMap;
     }
 
-    public static String executeMethod(String className,String methodName) throws Exception{
+    public static Object executeMethod(String className,String methodName) throws Exception{
         Class<?> myclass = Class.forName(className);
         Method method = myclass.getMethod(methodName,new Class[0]);
         Object instance = myclass.newInstance();
-        String result = (String)method.invoke(instance,new Object[0]);
+        Object result = (Object)method.invoke(instance,new Object[0]);
         return result;
     }
 
