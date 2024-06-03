@@ -9,6 +9,7 @@ import java.util.List;
 import annotation.*;
 import utility.Util;
 import utility.Mapping;
+import utility.ModelView;
 import java.util.HashMap;
 import javax.servlet.annotation.WebServlet;
 import java.lang.reflect.*;
@@ -18,14 +19,6 @@ import java.lang.reflect.*;
  */
 public class FrontController extends HttpServlet {
     HashMap<String, Mapping> myHashMap = new HashMap<>();
-
-
-    /**
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     public void initVariable() throws ServletException{
         try {
             myHashMap = Util.getListControllerWithAnnotationMethodGet("packageController", getServletConfig());
@@ -44,7 +37,6 @@ public class FrontController extends HttpServlet {
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
         try{
             //url apres nom de domaine
@@ -53,61 +45,41 @@ public class FrontController extends HttpServlet {
             String contextPath = request.getContextPath();
             //url apres le context
             String pathInfo = requestURI.substring(contextPath.length());
-
-            int size = myHashMap.size();
-            for (String key : myHashMap.keySet()) {
-                if(key.equals(pathInfo)){
-                Mapping map = myHashMap.get(key);
-                out.print("URL: " + key + ", Mapping: " + map.toString());
-                out.print("<br>");
-                String result = Util.executeMethod(map.getClassName(),map.getMethodName());
-                out.print("Result of invocation method   => " + map.getMethodName()  +" => "+result);
-                }
+            Mapping map = Util.findMappingAssociateUrl(myHashMap,pathInfo);
+            Object result = Util.executeMethod(map.getClassName(),map.getMethodName());
+                if(result instanceof ModelView){
+                    ModelView modelview = (ModelView) result;
+                    HashMap<String, Object> dataInHashmap = modelview.getData();
+                    for (String keyInData : dataInHashmap.keySet()) {
+                        request.setAttribute(keyInData,dataInHashmap.get(keyInData));
+                    }
+                    String redirection = modelview.getUrl();
+                            RequestDispatcher dispatcher = request.getRequestDispatcher("/"+redirection);
+                            dispatcher.forward(request,response);
+                
+            }else{
+             out.print((String)result);
             }
-
-
-
-            
-        
-        }catch(Exception e){
-
+    }catch(Exception e){
+            e.printStackTrace();
         }
     }
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+ 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
 
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
+    
     @Override
     public String getServletInfo() {
         return "Short description";

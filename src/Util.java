@@ -61,12 +61,23 @@ public class Util {
         return myHashMap;
     }
 
-    public static String executeMethod(String className,String methodName) throws Exception{
+    public static Object executeMethod(String className,String methodName) throws Exception{
         Class<?> myclass = Class.forName(className);
         Method method = myclass.getMethod(methodName,new Class[0]);
         Object instance = myclass.newInstance();
-        String result = (String)method.invoke(instance,new Object[0]);
+        Object result = (Object)method.invoke(instance,new Object[0]);
         return result;
+    }
+
+    public static Mapping  findMappingAssociateUrl(HashMap<String, Mapping> myHashMap,String pathInfo)throws Exception{
+        Mapping map = null;
+        for (String key : myHashMap.keySet()) {
+            if(key.equals(pathInfo)){
+               map = myHashMap.get(key);
+               break;
+        }
+    }
+    return map;
     }
 
 }
