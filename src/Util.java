@@ -69,4 +69,15 @@ public class Util {
         return result;
     }
 
+    public static Mapping  findMappingAssociateUrl(HashMap<String, Mapping> myHashMap,String pathInfo)throws Exception{
+        Mapping map = null;
+        for (String key : myHashMap.keySet()) {
+            if(key.equals(pathInfo)){
+               map = myHashMap.get(key);
+               break;
+        }
+    }
+    return map;
+    }
+
 }
