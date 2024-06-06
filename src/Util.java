@@ -57,8 +57,26 @@ public class Util {
                 }
             }
         }
-        
         return myHashMap;
+    }
+
+
+    public static void isDuplicateUrlMapping(String url,String packageController, ServletConfig servletConfig)throws Exception{
+        List<Class<?>> controllers = Util.getListeClass(packageController,servletConfig);
+        int count = 0;
+        for (Class<?> controller : controllers) {
+            for (Method method : controller.getDeclaredMethods()) {
+                // Vérification des annotations @Get sur les méthodes du contrôle
+                if (method.isAnnotationPresent(Get.class)) {
+                    Get getAnnotation = method.getAnnotation(Get.class);
+                    String urlAnnotation = getAnnotation.value();
+                    if(url.equals(urlAnnotation)) count+=1;
+                }
+            }
+        }
+        if(count > 1){
+            throw new Exception("Erreur : plusieurs méthodes associées à l'URL");
+        }
     }
 
     public static Object executeMethod(String className,String methodName) throws Exception{
@@ -70,14 +88,28 @@ public class Util {
     }
 
     public static Mapping  findMappingAssociateUrl(HashMap<String, Mapping> myHashMap,String pathInfo)throws Exception{
-        Mapping map = null;
+        Mapping map = new Mapping();
         for (String key : myHashMap.keySet()) {
             if(key.equals(pathInfo)){
                map = myHashMap.get(key);
-               break;
         }
+     
     }
     return map;
+    }
+
+    public static boolean isStringOrModelview(Object object){
+        if(object instanceof String || object instanceof ModelView){ return true; } return false;
+    }
+
+    public static void redirectModelView(HttpServletRequest request, HttpServletResponse response,ModelView modelview)throws ServletException, IOException{
+        HashMap<String, Object> dataInHashmap = modelview.getData();
+        for (String keyInData : dataInHashmap.keySet()) {
+            request.setAttribute(keyInData,dataInHashmap.get(keyInData));
+        }
+        String redirection = modelview.getUrl();
+                RequestDispatcher dispatcher = request.getRequestDispatcher("/"+redirection);
+                dispatcher.forward(request,response);
     }
 
 }

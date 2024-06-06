@@ -25,13 +25,18 @@ public class FrontController extends HttpServlet {
     } catch (Exception e) {
             e.getStackTrace();
     }
+    if (myHashMap == null || myHashMap.isEmpty()) {
+        throw new ServletException("Aucun controller trouvé");
+    }
     }
 
     public void init() throws ServletException{
         try {
             initVariable();
         } catch (Exception e) {
+            e.printStackTrace();
             e.getStackTrace();
+            System.err.println(e.getMessage());
         }
     }
 
@@ -45,23 +50,30 @@ public class FrontController extends HttpServlet {
             String contextPath = request.getContextPath();
             //url apres le context
             String pathInfo = requestURI.substring(contextPath.length());
+
+            Util.isDuplicateUrlMapping(pathInfo ,"packageController", getServletConfig());
+            
             Mapping map = Util.findMappingAssociateUrl(myHashMap,pathInfo);
-            Object result = Util.executeMethod(map.getClassName(),map.getMethodName());
-                if(result instanceof ModelView){
-                    ModelView modelview = (ModelView) result;
-                    HashMap<String, Object> dataInHashmap = modelview.getData();
-                    for (String keyInData : dataInHashmap.keySet()) {
-                        request.setAttribute(keyInData,dataInHashmap.get(keyInData));
-                    }
-                    String redirection = modelview.getUrl();
-                            RequestDispatcher dispatcher = request.getRequestDispatcher("/"+redirection);
-                            dispatcher.forward(request,response);
-                
+            if (map.getClassName() == null) {
+                out.print(404);
             }else{
-             out.print((String)result);
+                Object result = Util.executeMethod(map.getClassName(),map.getMethodName());
+                if(Util.isStringOrModelview(result)){
+                    if(result instanceof ModelView){
+                        ModelView modelview = (ModelView) result;
+                        Util.redirectModelView(request,response,modelview);
+                    }else{
+                        out.print(" la methode est de type string => " + result);
+                    }
+            }else{
+             out.print("la methode n'est pas de type string ou modelView " + result);
+            }
             }
     }catch(Exception e){
             e.printStackTrace();
+            e.getStackTrace();
+            System.err.println(e.getMessage());
+            
         }
     }
 
