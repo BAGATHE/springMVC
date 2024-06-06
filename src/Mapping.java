@@ -3,7 +3,11 @@ public class Mapping {
   private String className;
   private String methodName;
   
- // Constructeur pour initialiser les attributs
+ 
+  // Constructeur pour initialiser les attributs
+public Mapping (){ 
+}
+
   public Mapping(String className, String methodName) {
 
         this.setClassName(className);
