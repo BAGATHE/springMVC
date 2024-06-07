@@ -19,15 +19,13 @@ import java.lang.reflect.*;
  */
 public class FrontController extends HttpServlet {
     HashMap<String, Mapping> myHashMap = new HashMap<>();
-    public void initVariable() throws ServletException{
+    public void initVariable() throws Exception{
         try {
             myHashMap = Util.getListControllerWithAnnotationMethodGet("packageController", getServletConfig());
     } catch (Exception e) {
-            e.getStackTrace();
+            throw e;
     }
-    if (myHashMap == null || myHashMap.isEmpty()) {
-        throw new ServletException("Aucun controller trouvé");
-    }
+    
     }
 
     public void init() throws ServletException{
