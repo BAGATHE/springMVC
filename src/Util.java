@@ -21,11 +21,13 @@ public class Util {
     public static List<Class<?>> getListeClass(String packageController, ServletConfig servletConfig) throws Exception {
         List<Class<?>> listController = new ArrayList<>();
         String packageToScan = servletConfig.getInitParameter(packageController);
-        String path = Thread.currentThread().getContextClassLoader().getResource(packageToScan.replace('.', '/'))
-                .getPath();
+        if(Thread.currentThread().getContextClassLoader().getResource(packageToScan.replace('.', '/')) == null){
+            throw new Exception("Package : " + packageController + " est null !");
+        }
+        String path = Thread.currentThread().getContextClassLoader().getResource(packageToScan.replace('.', '/')).getPath();
         String decodedPath = URLDecoder.decode(path, "UTF-8");
         File packageDir = new File(decodedPath);
-
+           
         // Parcourir tous les fichiers dans le répertoire du package
         File[] files = packageDir.listFiles();
         if (files != null) {
