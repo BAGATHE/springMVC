@@ -55,7 +55,7 @@ public class FrontController extends HttpServlet {
             if (map.getClassName() == null) {
                 out.print(404);
             }else{
-                Object result = Util.executeMethod(map.getClassName(),map.getMethodName());
+                Object result = Util.executeMethod(map.getClassName(),map.getMethodName(),request);
                 if(Util.isStringOrModelview(result)){
                     if(result instanceof ModelView){
                         ModelView modelview = (ModelView) result;

@@ -10,7 +10,9 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 
 import javax.servlet.http.*;  
-import javax.servlet.*;  
+import javax.servlet.*;
+import java.lang.annotation.Annotation;
+import annotation.Argument;
 import annotation.Controller;
 import annotation.Get;
 import controller.FrontController;
@@ -81,13 +83,38 @@ public class Util {
         }
     }
 
-    public static Object executeMethod(String className,String methodName) throws Exception{
-        Class<?> myclass = Class.forName(className);
-        Method method = myclass.getMethod(methodName,new Class[0]);
-        Object instance = myclass.newInstance();
-        Object result = (Object)method.invoke(instance,new Object[0]);
-        return result;
+   public static Object executeMethod(String className, String methodName, HttpServletRequest request) throws Exception {
+    Class<?> myClass = Class.forName(className);
+    Method method = null;
+    Object instance = myClass.newInstance();
+    Object result = null;
+    for (Method m : myClass.getMethods()) {
+        if (m.getName().equals(methodName)) {
+            // Vérifie si la méthode ne prend pas de paramètres
+            if (m.getParameterCount() == 0) {
+                method = m;
+                // Méthode sans paramètres
+                result = method.invoke(instance);
+                break;
+            } else {
+                // Vérifie si les paramètres nécessaires sont disponibles dans la requête
+                List<Object> methodParameters = Util.prepareParameter(m, request);
+                if (methodParameters.size() == m.getParameterCount()) {
+                    method = m;
+                    result = method.invoke(instance, methodParameters.toArray(new Object[0]));
+                    break;
+                } else {
+                    throw new Exception("Le nombre de paramètres est insuffisant pour la méthode " + methodName);
+                }
+            }
+        }
     }
+    if (method == null) {
+        throw new NoSuchMethodException("Méthode non trouvée : " + methodName);
+    }
+    
+    return result;
+}
 
     public static Mapping  findMappingAssociateUrl(HashMap<String, Mapping> myHashMap,String pathInfo)throws Exception{
         Mapping map = new Mapping();
@@ -112,6 +139,33 @@ public class Util {
         String redirection = modelview.getUrl();
                 RequestDispatcher dispatcher = request.getRequestDispatcher("/"+redirection);
                 dispatcher.forward(request,response);
+    }
+
+
+
+    public static List<Object> prepareParameter(Method method, HttpServletRequest request) throws InvocationTargetException, IllegalAccessException, IOException {
+        Parameter[] argument = method.getParameters();
+        List<Object> result = new ArrayList<>();
+        for (int i=0;i<argument.length;i++){
+            // Récupère l'annotation Argument associée au paramètre couran
+            Annotation arg_annotation = argument[i].getAnnotation(Argument.class);
+            String name_annotation = "";
+            if(arg_annotation != null){
+                name_annotation = ((Argument) arg_annotation).name();
+            }
+            String realName = null;
+            if (request.getParameter(name_annotation) != null){
+                realName = name_annotation;
+            }
+            if (request.getParameter(argument[i].getName()) != null){
+                realName = argument[i].getName();
+            }
+            if(realName != null){
+                result.add(request.getParameter(realName));
+            }
+
+        }
+        return result;
     }
 
 }
