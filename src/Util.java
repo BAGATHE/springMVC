@@ -8,7 +8,7 @@ import java.util.List;
 import java.net.URLDecoder;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-
+import java.util.Map;
 import javax.servlet.http.*;  
 import javax.servlet.*;
 import java.lang.annotation.Annotation;
@@ -18,6 +18,8 @@ import annotation.Get;
 import controller.FrontController;
 import java.util.HashMap;
 import java.lang.reflect.*;
+import com.thoughtworks.paranamer.Paranamer;
+import com.thoughtworks.paranamer.AdaptiveParanamer;
 
 public class Util {
     public static List<Class<?>> getListeClass(String packageController, ServletConfig servletConfig) throws Exception {
@@ -83,24 +85,27 @@ public class Util {
         }
     }
 
-   public static Object executeMethod(String className, String methodName, HttpServletRequest request) throws Exception {
-    Class<?> myClass = Class.forName(className);
+   public static Object executeMethod(Mapping map, String urlMapping, HttpServletRequest request) throws Exception { 
+   String className =  map.getClassName();
+   String methodName = map.getMethodName();
+   Class<?> myClass = Class.forName(className);
     Method method = null;
     Object instance = myClass.newInstance();
     Object result = null;
     for (Method m : myClass.getMethods()) {
-        if (m.getName().equals(methodName)) {
+        if (m.getName().equals(methodName) && 
+            m.isAnnotationPresent(Get.class) && 
+            urlMapping.equals(((Get) m.getAnnotation(Get.class)).value())) {
+            method = m;
             // Vérifie si la méthode ne prend pas de paramètres
             if (m.getParameterCount() == 0) {
-                method = m;
                 // Méthode sans paramètres
                 result = method.invoke(instance);
                 break;
             } else {
                 // Vérifie si les paramètres nécessaires sont disponibles dans la requête
-                List<Object> methodParameters = Util.prepareParameter(m, request);
+                List<Object> methodParameters = Util.prepareParameters(m, request);
                 if (methodParameters.size() == m.getParameterCount()) {
-                    method = m;
                     result = method.invoke(instance, methodParameters.toArray(new Object[0]));
                     break;
                 } else {
@@ -142,30 +147,103 @@ public class Util {
     }
 
 
-
-    public static List<Object> prepareParameter(Method method, HttpServletRequest request) throws InvocationTargetException, IllegalAccessException, IOException {
-        Parameter[] argument = method.getParameters();
-        List<Object> result = new ArrayList<>();
-        for (int i=0;i<argument.length;i++){
-            // Récupère l'annotation Argument associée au paramètre couran
-            Annotation arg_annotation = argument[i].getAnnotation(Argument.class);
-            String name_annotation = "";
-            if(arg_annotation != null){
-                name_annotation = ((Argument) arg_annotation).name();
+    public static Object convertParamPrimitiveString(String value, Class<?> type)
+            throws Exception {
+        Object object = null;
+        if (value != null && value != "") {
+            try {
+                if (type == String.class) {
+                    object = (value);
+                } else if (type == int.class || type == Integer.class) {
+                    object = (Integer.parseInt(value));
+                } else if (type == boolean.class || type == Boolean.class) {
+                    object = (Boolean.parseBoolean(value));
+                } else if (type == long.class || type == Long.class) {
+                    object = (Long.parseLong(value));
+                } else if (type == double.class || type == Double.class) {
+                    object = (Double.parseDouble(value));
+                } else if (type == float.class || type == Float.class) {
+                    object = (Float.parseFloat(value));
+                } else if (type == short.class || type == Short.class) {
+                    object = (Short.parseShort(value));
+                } else if (type == byte.class || type == Byte.class) {
+                    object = (Byte.parseByte(value));
+                } else if (type == char.class || type == Character.class) {
+                    object = (value.charAt(0));
+                }
+            } catch (Exception e) {
+                throw new Exception("Type de " + value + " est invalide car c'est de type = " + type.getName());
             }
-            String realName = null;
-            if (request.getParameter(name_annotation) != null){
-                realName = name_annotation;
-            }
-            if (request.getParameter(argument[i].getName()) != null){
-                realName = argument[i].getName();
-            }
-            if(realName != null){
-                result.add(request.getParameter(realName));
-            }
-
         }
-        return result;
+        return object;
+    }
+
+    private static void invokeSetter(Object instance, String fieldName, String value) throws Exception {
+        Method[] methods = instance.getClass().getMethods();
+        String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        for (Method method : methods) {
+            if (method.getName().equals(setterName)) {
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                if (parameterTypes.length == 1) {
+                    Object convertedValue = convertParamPrimitiveString(value, parameterTypes[0]);
+                    method.invoke(instance, convertedValue);
+                    return;
+                }
+            }
+        }
+        throw new NoSuchMethodException(
+                "Setter method " + setterName + " not found in class " + instance.getClass().getName());
+    }
+
+    public static List<Object> prepareParameters(Method methode, HttpServletRequest request) throws Exception {
+        Paranamer paranamer = new AdaptiveParanamer();
+        String[] parameterNames = paranamer.lookupParameterNames(methode);
+        Parameter[] arguments = methode.getParameters();
+        List<Object> resultats = new ArrayList<>();
+        Map<String, Object> objectInstances = new HashMap<>();
+
+        for (int i = 0; i < arguments.length; i++) {
+            Argument annotationArg = arguments[i].getAnnotation(Argument.class);
+            String parameterName = parameterNames[i];
+            if (annotationArg != null && annotationArg.name() != null) {
+                parameterName = request.getParameter(annotationArg.name());
+            }
+            String parameterValue = request.getParameter(parameterName);
+            Class<?> parameterType = arguments[i].getType();
+
+            if (parameterType.isPrimitive() || parameterType.equals(String.class)) {
+                resultats.add(convertParamPrimitiveString(parameterValue, parameterType));
+            } else {
+                final String finalParameterName = parameterName;
+                final Parameter finalArgument = arguments[i];
+
+                String[] paramterFullName = request.getParameterMap().keySet().stream()
+                        .filter(key -> key.startsWith(finalParameterName + "."))
+                        .toArray(String[]::new);
+
+                if (paramterFullName.length > 0) {
+                    Object instance = objectInstances.computeIfAbsent(finalParameterName, key -> {
+                        try {
+                            return finalArgument.getType().getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
+                            throw new RuntimeException(
+                                    "Failed to create instance of " + finalArgument.getType().getName(),
+                                    e);
+                        }
+                    });
+
+                    for (String paramName : paramterFullName) {
+                        String fieldName = paramName.substring(paramName.indexOf('.') + 1);
+                        String fieldValue = request.getParameter(paramName);
+                        invokeSetter(instance, fieldName, fieldValue);
+                    }
+                    resultats.add(instance);
+                } else {
+                    resultats.add(null);
+                }
+            }
+        }
+        return resultats;
     }
 
 }

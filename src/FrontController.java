@@ -48,14 +48,19 @@ public class FrontController extends HttpServlet {
             String contextPath = request.getContextPath();
             //url apres le context
             String pathInfo = requestURI.substring(contextPath.length());
+            int queryIndex = pathInfo.indexOf('?');
+            String urlMapping = pathInfo;
+            if (queryIndex != -1) {
+                urlMapping = pathInfo.substring(0, queryIndex);
+            }
 
-            Util.isDuplicateUrlMapping(pathInfo ,"packageController", getServletConfig());
+            Util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
             
-            Mapping map = Util.findMappingAssociateUrl(myHashMap,pathInfo);
+            Mapping map = Util.findMappingAssociateUrl(myHashMap,urlMapping);
             if (map.getClassName() == null) {
                 out.print(404);
             }else{
-                Object result = Util.executeMethod(map.getClassName(),map.getMethodName(),request);
+                Object result = Util.executeMethod(map,urlMapping,request);
                 if(Util.isStringOrModelview(result)){
                     if(result instanceof ModelView){
                         ModelView modelview = (ModelView) result;
