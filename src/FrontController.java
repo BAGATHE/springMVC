@@ -60,10 +60,11 @@ public class FrontController extends HttpServlet {
             if (map.getClassName() == null) {
                 out.print(404);
             }else{
-                Object result = Util.executeMethod(map,urlMapping,request);
+                Object result = Util.executeMethod(map,urlMapping,request,response);
                 if(Util.isStringOrModelview(result)){
                     if(result instanceof ModelView){
                         ModelView modelview = (ModelView) result;
+                        out.print(result);
                         Util.redirectModelView(request,response,modelview);
                     }else{
                         out.print(" la methode est de type string => " + result);

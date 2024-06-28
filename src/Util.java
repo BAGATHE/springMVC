@@ -85,7 +85,127 @@ public class Util {
         }
     }
 
-   public static Object executeMethod(Mapping map, String urlMapping, HttpServletRequest request) throws Exception { 
+
+    private static void invokeSetter(Object instance, String fieldName, String value) throws Exception {
+        Method[] methods = instance.getClass().getMethods();
+        String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        for (Method method : methods) {
+            if (method.getName().equals(setterName)) {
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                if (parameterTypes.length == 1) {
+                    Object convertedValue = convertParamPrimitiveString(value, parameterTypes[0]);
+                    method.invoke(instance, convertedValue);
+                    return;
+                }
+            }
+        }
+        throw new NoSuchMethodException(
+                "Setter method " + setterName + " not found in class " + instance.getClass().getName());
+    }
+
+       public static Object convertParamPrimitiveString(String value, Class<?> type)
+            throws Exception {
+        Object object = null;
+        if (value != null && value != "") {
+            try {
+                if (type == String.class) {
+                    object = (value);
+                } else if (type == int.class || type == Integer.class) {
+                    object = (Integer.parseInt(value));
+                } else if (type == boolean.class || type == Boolean.class) {
+                    object = (Boolean.parseBoolean(value));
+                } else if (type == long.class || type == Long.class) {
+                    object = (Long.parseLong(value));
+                } else if (type == double.class || type == Double.class) {
+                    object = (Double.parseDouble(value));
+                } else if (type == float.class || type == Float.class) {
+                    object = (Float.parseFloat(value));
+                } else if (type == short.class || type == Short.class) {
+                    object = (Short.parseShort(value));
+                } else if (type == byte.class || type == Byte.class) {
+                    object = (Byte.parseByte(value));
+                } else if (type == char.class || type == Character.class) {
+                    object = (value.charAt(0));
+                }
+            } catch (Exception e) {
+                throw new Exception("Type de " + value + " est invalide car c'est de type = " + type.getName());
+            }
+        }
+        return object;
+    }
+
+    public static List<Object> prepareParameters(Method methode, HttpServletRequest request,HttpServletResponse response) throws Exception {
+        Paranamer paranamer = new AdaptiveParanamer();
+       
+        String[] parameterNames = paranamer.lookupParameterNames(methode);
+        Parameter[] arguments = methode.getParameters();
+        
+        List<Object> resultats = new ArrayList<>();
+        
+        Map<String, Object> objectInstances = new HashMap<>();
+        
+        List<String> exceptionAnnotation = new ArrayList();
+        for (int i = 0; i < arguments.length; i++) {
+            Argument annotationArg = arguments[i].getAnnotation(Argument.class);
+            if(annotationArg==null){
+                exceptionAnnotation.add("ETU 002658");
+            }
+            String parameterName = parameterNames[i];
+
+            if (annotationArg != null && annotationArg.name() != null) {
+                 parameterName = annotationArg.name();
+            }
+            String parameterValue = request.getParameter(parameterName);
+            Class<?> parameterType = arguments[i].getType();
+
+            if (parameterType.isPrimitive() || parameterType.equals(String.class)) {
+                resultats.add(convertParamPrimitiveString(parameterValue, parameterType));
+            } else {
+                final String finalParameterName = parameterName;
+                final Parameter finalArgument = arguments[i];
+
+                String[] paramterFullName = request.getParameterMap().keySet().stream()
+                        .filter(key -> key.startsWith(finalParameterName + "."))
+                        .toArray(String[]::new);
+
+                if (paramterFullName.length > 0) {
+                    Object instance = objectInstances.computeIfAbsent(finalParameterName, key -> {
+                        try {
+                            return finalArgument.getType().getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
+                            throw new RuntimeException(
+                                    "Failed to create instance of " + finalArgument.getType().getName(),
+                                    e);
+                        }
+                    });
+
+                    for (String paramName : paramterFullName) {
+                        String fieldName = paramName.substring(paramName.indexOf('.') + 1);
+                        String fieldValue = request.getParameter(paramName);
+                        invokeSetter(instance, fieldName, fieldValue);
+                    }
+                    resultats.add(instance);
+                } else {
+                    resultats.add(null);
+                }
+            }
+        }
+        if (!exceptionAnnotation.isEmpty()) {
+            StringBuilder erreurMessage = new StringBuilder();
+            erreurMessage.append("ETU002658 Exception : ").append("\n");
+            for (String erreur : exceptionAnnotation) {
+                erreurMessage.append(erreur).append("\n");
+            }
+            request.setAttribute("erreur", erreurMessage.toString());
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/erreur.jsp");
+            dispatcher.forward(request, response);
+            
+        }
+
+        return resultats;
+    }
+
+   public static Object executeMethod(Mapping map, String urlMapping, HttpServletRequest request,HttpServletResponse response) throws Exception { 
    String className =  map.getClassName();
    String methodName = map.getMethodName();
    Class<?> myClass = Class.forName(className);
@@ -104,7 +224,8 @@ public class Util {
                 break;
             } else {
                 // Vérifie si les paramètres nécessaires sont disponibles dans la requête
-                List<Object> methodParameters = Util.prepareParameters(m, request);
+               
+                List<Object> methodParameters = Util.prepareParameters(m, request,response);
                 if (methodParameters.size() == m.getParameterCount()) {
                     result = method.invoke(instance, methodParameters.toArray(new Object[0]));
                     break;
@@ -147,103 +268,7 @@ public class Util {
     }
 
 
-    public static Object convertParamPrimitiveString(String value, Class<?> type)
-            throws Exception {
-        Object object = null;
-        if (value != null && value != "") {
-            try {
-                if (type == String.class) {
-                    object = (value);
-                } else if (type == int.class || type == Integer.class) {
-                    object = (Integer.parseInt(value));
-                } else if (type == boolean.class || type == Boolean.class) {
-                    object = (Boolean.parseBoolean(value));
-                } else if (type == long.class || type == Long.class) {
-                    object = (Long.parseLong(value));
-                } else if (type == double.class || type == Double.class) {
-                    object = (Double.parseDouble(value));
-                } else if (type == float.class || type == Float.class) {
-                    object = (Float.parseFloat(value));
-                } else if (type == short.class || type == Short.class) {
-                    object = (Short.parseShort(value));
-                } else if (type == byte.class || type == Byte.class) {
-                    object = (Byte.parseByte(value));
-                } else if (type == char.class || type == Character.class) {
-                    object = (value.charAt(0));
-                }
-            } catch (Exception e) {
-                throw new Exception("Type de " + value + " est invalide car c'est de type = " + type.getName());
-            }
-        }
-        return object;
-    }
+ 
 
-    private static void invokeSetter(Object instance, String fieldName, String value) throws Exception {
-        Method[] methods = instance.getClass().getMethods();
-        String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
-        for (Method method : methods) {
-            if (method.getName().equals(setterName)) {
-                Class<?>[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length == 1) {
-                    Object convertedValue = convertParamPrimitiveString(value, parameterTypes[0]);
-                    method.invoke(instance, convertedValue);
-                    return;
-                }
-            }
-        }
-        throw new NoSuchMethodException(
-                "Setter method " + setterName + " not found in class " + instance.getClass().getName());
-    }
-
-    public static List<Object> prepareParameters(Method methode, HttpServletRequest request) throws Exception {
-        Paranamer paranamer = new AdaptiveParanamer();
-        String[] parameterNames = paranamer.lookupParameterNames(methode);
-        Parameter[] arguments = methode.getParameters();
-        List<Object> resultats = new ArrayList<>();
-        Map<String, Object> objectInstances = new HashMap<>();
-
-        for (int i = 0; i < arguments.length; i++) {
-            Argument annotationArg = arguments[i].getAnnotation(Argument.class);
-            String parameterName = parameterNames[i];
-            if (annotationArg != null && annotationArg.name() != null) {
-                parameterName = request.getParameter(annotationArg.name());
-            }
-            String parameterValue = request.getParameter(parameterName);
-            Class<?> parameterType = arguments[i].getType();
-
-            if (parameterType.isPrimitive() || parameterType.equals(String.class)) {
-                resultats.add(convertParamPrimitiveString(parameterValue, parameterType));
-            } else {
-                final String finalParameterName = parameterName;
-                final Parameter finalArgument = arguments[i];
-
-                String[] paramterFullName = request.getParameterMap().keySet().stream()
-                        .filter(key -> key.startsWith(finalParameterName + "."))
-                        .toArray(String[]::new);
-
-                if (paramterFullName.length > 0) {
-                    Object instance = objectInstances.computeIfAbsent(finalParameterName, key -> {
-                        try {
-                            return finalArgument.getType().getDeclaredConstructor().newInstance();
-                        } catch (Exception e) {
-                            throw new RuntimeException(
-                                    "Failed to create instance of " + finalArgument.getType().getName(),
-                                    e);
-                        }
-                    });
-
-                    for (String paramName : paramterFullName) {
-                        String fieldName = paramName.substring(paramName.indexOf('.') + 1);
-                        String fieldValue = request.getParameter(paramName);
-                        invokeSetter(instance, fieldName, fieldValue);
-                    }
-                    resultats.add(instance);
-                } else {
-                    resultats.add(null);
-                }
-            }
-        }
-        return resultats;
-    }
 
 }
