@@ -53,13 +53,13 @@ public class FrontController extends HttpServlet {
             if (queryIndex != -1) {
                 urlMapping = pathInfo.substring(0, queryIndex);
             }
-
             Util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
-            
             Mapping map = Util.findMappingAssociateUrl(myHashMap,urlMapping);
+            
             if (map.getClassName() == null) {
                 out.print(404);
             }else{
+                Util.checkControllerContainsAttributMySession(map.getClassName(),request);
                 Object result = Util.executeMethod(map,urlMapping,request,response);
                 if(Util.isStringOrModelview(result)){
                     if(result instanceof ModelView){

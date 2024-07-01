@@ -211,6 +211,7 @@ public class Util {
    Class<?> myClass = Class.forName(className);
     Method method = null;
     Object instance = myClass.newInstance();
+    Util.checkControllerContainsAttributMySession(instance,request);
     Object result = null;
     for (Method m : myClass.getMethods()) {
         if (m.getName().equals(methodName) && 
@@ -238,7 +239,6 @@ public class Util {
     if (method == null) {
         throw new NoSuchMethodException("Méthode non trouvée : " + methodName);
     }
-    
     return result;
 }
 
@@ -265,6 +265,23 @@ public class Util {
         String redirection = modelview.getUrl();
                 RequestDispatcher dispatcher = request.getRequestDispatcher("/"+redirection);
                 dispatcher.forward(request,response);
+    }
+
+    /*fonction qui verifie si une classe controller contient une attribut d'instance mySession si il en a je sette la session en attribuant une liste de valeur */
+    public static void checkControllerContainsAttributMySession(Object controller, HttpServletRequest request) {
+        try {
+            Class<?> clazz = controller.getClass();
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field field : fields) {
+                if (field.getType() == MySession.class) {
+                    MySession mySession = new MySession(request.getSession());
+                    field.setAccessible(true); 
+                    field.set(controller, mySession);
+                }
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Erreur lors de l'accès au champ", e);
+        }
     }
 
 
