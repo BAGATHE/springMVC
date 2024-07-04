@@ -144,14 +144,9 @@ public class Util {
         
         Map<String, Object> objectInstances = new HashMap<>();
         
-        List<String> exceptionAnnotation = new ArrayList();
         for (int i = 0; i < arguments.length; i++) {
             Argument annotationArg = arguments[i].getAnnotation(Argument.class);
-            if(annotationArg==null){
-                exceptionAnnotation.add("ETU 002658");
-            }
             String parameterName = parameterNames[i];
-
             if (annotationArg != null && annotationArg.name() != null) {
                  parameterName = annotationArg.name();
             }
@@ -160,6 +155,8 @@ public class Util {
 
             if (parameterType.isPrimitive() || parameterType.equals(String.class)) {
                 resultats.add(convertParamPrimitiveString(parameterValue, parameterType));
+            }else if(parameterType.equals(MySession.class)){
+                resultats.add(new MySession(request.getSession()));
             } else {
                 final String finalParameterName = parameterName;
                 final Parameter finalArgument = arguments[i];
@@ -190,18 +187,6 @@ public class Util {
                 }
             }
         }
-        if (!exceptionAnnotation.isEmpty()) {
-            StringBuilder erreurMessage = new StringBuilder();
-            erreurMessage.append("ETU002658 Exception : ").append("\n");
-            for (String erreur : exceptionAnnotation) {
-                erreurMessage.append(erreur).append("\n");
-            }
-            request.setAttribute("erreur", erreurMessage.toString());
-            RequestDispatcher dispatcher = request.getRequestDispatcher("/erreur.jsp");
-            dispatcher.forward(request, response);
-            
-        }
-
         return resultats;
     }
 

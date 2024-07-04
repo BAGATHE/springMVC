@@ -5,7 +5,7 @@ set "SRC=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\src"
 set "JAR=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\jar"
 set "libParanamer=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\lib\paranamer-2.8.jar"
 set "CLASSPATH=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Test\lib"
-set "jarName=sprint7-2658" 
+set "jarName=sprint8-2658" 
 
 if not exist "%JAR%" mkdir "%JAR%"
 cd "%SRC%"
