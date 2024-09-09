@@ -1,10 +1,10 @@
 @echo off
 
-set "lib=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\lib"
-set "SRC=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\src"
-set "JAR=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\jar"
-set "libParanamer=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Framework\lib\paranamer-2.8.jar"
-set "CLASSPATH=D:\itu\LICENCE-2\Semestre4\MrNiaina\springMVC\Test\lib"
+set "lib=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\lib"
+set "SRC=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\src"
+set "JAR=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\jar"
+set "libParanamer=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\lib\paranamer-2.8.jar"
+set "CLASSPATH=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Test\lib"
 set "jarName=sprint8-2658" 
 
 if not exist "%JAR%" mkdir "%JAR%"

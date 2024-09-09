@@ -1,7 +1,7 @@
 package controller;
 
-import javax.servlet.http.*;  
-import javax.servlet.*;  
+import jakarta.servlet.http.*;  
+import jakarta.servlet.*;  
 import java.io.*;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import utility.Util;
 import utility.Mapping;
 import utility.ModelView;
 import java.util.HashMap;
-import javax.servlet.annotation.WebServlet;
+import jakarta.servlet.annotation.WebServlet;
 import java.lang.reflect.*;
 /**
  *
