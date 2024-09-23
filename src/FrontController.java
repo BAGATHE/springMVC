@@ -13,6 +13,7 @@ import utility.ModelView;
 import java.util.HashMap;
 import jakarta.servlet.annotation.WebServlet;
 import java.lang.reflect.*;
+import com.google.gson.Gson;
 /**
  *
  * @author Pc
@@ -21,7 +22,8 @@ public class FrontController extends HttpServlet {
     HashMap<String, Mapping> myHashMap = new HashMap<>();
     public void initVariable() throws Exception{
         try {
-            myHashMap = Util.getListControllerWithAnnotationMethodGet("packageController", getServletConfig());
+             Util util = Util.getInstance();
+            myHashMap = util.getListControllerWithAnnotationMethodGet("packageController", getServletConfig());
     } catch (Exception e) {
             throw e;
     }
@@ -30,6 +32,7 @@ public class FrontController extends HttpServlet {
 
     public void init() throws ServletException{
         try {
+            
             initVariable();
         } catch (Exception e) {
             e.printStackTrace();
@@ -42,6 +45,7 @@ public class FrontController extends HttpServlet {
             throws ServletException, IOException {
         PrintWriter out = response.getWriter();
         try{
+            Util util = Util.getInstance();
             //url apres nom de domaine
             String requestURI = request.getRequestURI();
             //chemin du context
@@ -53,19 +57,24 @@ public class FrontController extends HttpServlet {
             if (queryIndex != -1) {
                 urlMapping = pathInfo.substring(0, queryIndex);
             }
-            Util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
-            Mapping map = Util.findMappingAssociateUrl(myHashMap,urlMapping);
+            util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
+            Mapping map = util.findMappingAssociateUrl(myHashMap,urlMapping);
             
             if (map.getClassName() == null) {
                 out.print(404);
             }else{
-                Util.checkControllerContainsAttributMySession(map.getClassName(),request);
-                Object result = Util.executeMethod(map,urlMapping,request,response);
-                if(Util.isStringOrModelview(result)){
+                util.checkControllerContainsAttributMySession(map.getClassName(),request);
+                Object result = util.executeMethod(map,urlMapping,request,response);
+
+                if (result == null) {
+                return;  // Arrête l'exécution car la réponse a déjà été envoyée en JSON
+                }
+
+                if(util.isStringOrModelview(result)){
                     if(result instanceof ModelView){
                         ModelView modelview = (ModelView) result;
                         out.print(result);
-                        Util.redirectModelView(request,response,modelview);
+                        util.redirectModelView(request,response,modelview);
                     }else{
                         out.print(" la methode est de type string => " + result);
                     }
