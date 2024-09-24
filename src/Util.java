@@ -242,11 +242,19 @@ public class Util {
 
             // Si la méthode est annotée avec @RestApi, convertir le résultat en JSON
             if (this.isRestApiMethode(method)) {
-                String jsonResponse = this.convertToGson(result);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                response.getWriter().write(jsonResponse);
-                return null;  
+                   Gson gson = new Gson();
+                   String jsonResponse ="";
+                if (result instanceof ModelView) {
+                    ModelView modelView = (ModelView) result;
+                    modelView.convertToJsonData();
+                    } else {
+                        jsonResponse =  gson.toJson(result); 
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+                        response.getWriter().write(jsonResponse);
+                    return null; 
+                }
+                 
             }
             break;
         }

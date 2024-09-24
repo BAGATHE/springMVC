@@ -1,5 +1,7 @@
 package utility;
 import java.util.HashMap;
+import com.google.gson.Gson;
+import java.util.Map;
 
 public class ModelView {
     private String url;
@@ -58,5 +60,21 @@ public class ModelView {
                 ", data=" + data +
                 '}';
     }
+
+    public void convertToJsonData(){
+       HashMap<String, Object> jsonData = new HashMap<>();
+        Gson gson = new Gson();
+
+        
+        for (Map.Entry<String, Object> entry : this.getData().entrySet()) {
+            String key = entry.getKey();
+            Object value = gson.toJson(entry.getValue());
+            jsonData.put(key, value);
+        }
+
+        this.setData(jsonData);
+            }
+
+    
 
 }
