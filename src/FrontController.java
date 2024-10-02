@@ -23,7 +23,7 @@ public class FrontController extends HttpServlet {
     public void initVariable() throws Exception{
         try {
              Util util = Util.getInstance();
-            myHashMap = util.getListControllerWithAnnotationMethodGet("packageController", getServletConfig());
+            myHashMap = util.getListControllerWithAnnotationMethodUrl("packageController", getServletConfig());
     } catch (Exception e) {
             throw e;
     }
@@ -52,6 +52,9 @@ public class FrontController extends HttpServlet {
             String contextPath = request.getContextPath();
             //url apres le context
             String pathInfo = requestURI.substring(contextPath.length());
+
+           
+            
             int queryIndex = pathInfo.indexOf('?');
             String urlMapping = pathInfo;
             if (queryIndex != -1) {
@@ -85,6 +88,8 @@ public class FrontController extends HttpServlet {
     }catch(Exception e){
             e.printStackTrace();
             e.getStackTrace();
+            e.getMessage();
+            out.print(e.getMessage());
             System.err.println(e.getMessage());
             
         }
