@@ -23,6 +23,8 @@ import com.thoughtworks.paranamer.Paranamer;
 import com.thoughtworks.paranamer.AdaptiveParanamer;
 import com.google.gson.JsonObject;
 import com.google.gson.Gson;
+import annotation.Url;
+import annotation.Post;
 
 public class Util {
     /*implementation de singleton pour avoir qu'une seul instance de Util*/
@@ -70,17 +72,28 @@ public class Util {
         return listController;
     }
 
+    private String getAnnotationVerbeMethod(Method method){
+        String methode = "get";
+       if(method.isAnnotationPresent(Post.class)){
+                    methode = "post";
+                    return methode;
+       }
+       return methode;
+    }
 
-    public  HashMap<String, Mapping> getListControllerWithAnnotationMethodGet(String packageController, ServletConfig servletConfig) throws Exception {
+
+    public  HashMap<String, Mapping> getListControllerWithAnnotationMethodUrl(String packageController, ServletConfig servletConfig) throws Exception {
         List<Class<?>> controllers = this.getListeClass(packageController,servletConfig);
         HashMap<String, Mapping> myHashMap = new HashMap<>();
         for (Class<?> controller : controllers) {
             for (Method method : controller.getDeclaredMethods()) {
                 // Vérification des annotations @Get sur les méthodes du contrôle
-                if (method.isAnnotationPresent(Get.class)) {
-                    Get getAnnotation = method.getAnnotation(Get.class);
-                    String url = getAnnotation.value();
-                    Mapping mapping = new Mapping(controller.getName(), method.getName());
+                if (method.isAnnotationPresent(Url.class)) {
+                    String verb = "get";
+                    verb = this.getAnnotationVerbeMethod(method);
+                    Url annotation = method.getAnnotation(Url.class);
+                    String url = annotation.value();
+                    Mapping mapping = new Mapping(controller.getName(), method.getName(),verb);
                     myHashMap.put(url, mapping);
                 }
             }
@@ -95,8 +108,8 @@ public class Util {
         for (Class<?> controller : controllers) {
             for (Method method : controller.getDeclaredMethods()) {
                 // Vérification des annotations @Get sur les méthodes du contrôle
-                if (method.isAnnotationPresent(Get.class)) {
-                    Get getAnnotation = method.getAnnotation(Get.class);
+                if (method.isAnnotationPresent(Url.class)) {
+                    Url getAnnotation = method.getAnnotation(Url.class);
                     String urlAnnotation = getAnnotation.value();
                     if(url.equals(urlAnnotation)) count+=1;
                 }
@@ -211,9 +224,15 @@ public class Util {
         return resultats;
     }
 
+
+
+  
+
    public  Object executeMethod(Mapping map, String urlMapping, HttpServletRequest request,HttpServletResponse response) throws Exception { 
    String className =  map.getClassName();
    String methodName = map.getMethodName();
+   String verbMethod = map.getVerbe();
+   
    Class<?> myClass = Class.forName(className);
     Method method = null;
     Object instance = myClass.newInstance();
@@ -221,9 +240,14 @@ public class Util {
     Object result = null;
     for (Method m : myClass.getMethods()) {
         if (m.getName().equals(methodName) && 
-            m.isAnnotationPresent(Get.class) && 
-            urlMapping.equals(((Get) m.getAnnotation(Get.class)).value())) {
+            m.isAnnotationPresent(Url.class) && 
+            urlMapping.equals(((Url) m.getAnnotation(Url.class)).value())) {
             method = m;
+
+            if(!request.getMethod().equalsIgnoreCase(verbMethod)){
+                throw new Exception("verbe imcompatible");
+            }
+
            
             // Vérifie si la méthode ne prend pas de paramètres
             if (m.getParameterCount() == 0) {
