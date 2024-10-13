@@ -60,29 +60,30 @@ public class FrontController extends HttpServlet {
             if (queryIndex != -1) {
                 urlMapping = pathInfo.substring(0, queryIndex);
             }
-            util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
+            //util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
             Mapping map = util.findMappingAssociateUrl(myHashMap,urlMapping);
             
             if (map.getClassName() == null) {
-                out.print(404);
+                out.print("pas de mapping associe a cette url");
+                return ;
             }else{
                 util.checkControllerContainsAttributMySession(map.getClassName(),request);
                 Object result = util.executeMethod(map,urlMapping,request,response);
 
                 if (result == null) {
-                return;  // Arrête l'exécution car la réponse a déjà été envoyée en JSON
+                    out.print("result null");
+                return; 
                 }
 
                 if(util.isStringOrModelview(result)){
                     if(result instanceof ModelView){
                         ModelView modelview = (ModelView) result;
-                        out.print(result);
                         util.redirectModelView(request,response,modelview);
                     }else{
-                        out.print(" la methode est de type string => " + result);
+                        throw new Exception(" ERREUR 500 la methode est de type string => " + result);
                     }
             }else{
-             out.print("la methode n'est pas de type string ou modelView " + result);
+                throw new Exception(" ERREUR 500 la methode n'est pas de type string ou modelView " + result);
             }
             }
     }catch(Exception e){

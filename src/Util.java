@@ -25,6 +25,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.Gson;
 import annotation.Url;
 import annotation.Post;
+import java.util.HashSet;
 
 public class Util {
     /*implementation de singleton pour avoir qu'une seul instance de Util*/
@@ -85,18 +86,37 @@ public class Util {
     public  HashMap<String, Mapping> getListControllerWithAnnotationMethodUrl(String packageController, ServletConfig servletConfig) throws Exception {
         List<Class<?>> controllers = this.getListeClass(packageController,servletConfig);
         HashMap<String, Mapping> myHashMap = new HashMap<>();
+        List<String> listeErreur = new ArrayList();
         for (Class<?> controller : controllers) {
             for (Method method : controller.getDeclaredMethods()) {
-                // Vérification des annotations @Get sur les méthodes du contrôle
+                // Vérification des annotations @Url sur les méthodes du contrôle
                 if (method.isAnnotationPresent(Url.class)) {
                     String verb = "get";
                     verb = this.getAnnotationVerbeMethod(method);
                     Url annotation = method.getAnnotation(Url.class);
                     String url = annotation.value();
-                    Mapping mapping = new Mapping(controller.getName(), method.getName(),verb);
-                    myHashMap.put(url, mapping);
+                    Mapping mapping = new Mapping(controller.getName(),new HashSet<>());
+                    if(!myHashMap.isEmpty() && myHashMap.containsKey(url)){
+                        boolean isAdded = myHashMap.get(url).getListMethodVerb().add(new VerbMethod(verb,method.getName()));
+                        if (!isAdded) {
+                            listeErreur
+                                .add("L'URL " + url + " est dupliquee dans la Class : " + controller.getName()
+                                        + " , Method : " + method.getName() + ". \n");   
+                        }
+                       
+                    }else {
+                        mapping.getListMethodVerb().add(new VerbMethod(verb,method.getName()));
+                        myHashMap.put(url, mapping);
+                    }
                 }
             }
+        }
+         if (!listeErreur.isEmpty()) {
+            StringBuilder erreurMessage = new StringBuilder();
+            for (String erreur : listeErreur) {
+                erreurMessage.append(erreur).append("\n");
+            }
+            throw new Exception(erreurMessage.toString());
         }
         return myHashMap;
     }
@@ -107,7 +127,7 @@ public class Util {
         int count = 0;
         for (Class<?> controller : controllers) {
             for (Method method : controller.getDeclaredMethods()) {
-                // Vérification des annotations @Get sur les méthodes du contrôle
+                // Vérification des annotations @GURL sur les méthodes du contrôle
                 if (method.isAnnotationPresent(Url.class)) {
                     Url getAnnotation = method.getAnnotation(Url.class);
                     String urlAnnotation = getAnnotation.value();
@@ -227,11 +247,10 @@ public class Util {
 
 
   
-
+/*
    public  Object executeMethod(Mapping map, String urlMapping, HttpServletRequest request,HttpServletResponse response) throws Exception { 
    String className =  map.getClassName();
-   String methodName = map.getMethodName();
-   String verbMethod = map.getVerbe();
+  
    
    Class<?> myClass = Class.forName(className);
     Method method = null;
@@ -239,10 +258,16 @@ public class Util {
     this.checkControllerContainsAttributMySession(instance,request);
     Object result = null;
     for (Method m : myClass.getMethods()) {
-        if (m.getName().equals(methodName) && 
+        for(VerbMethod verb_method : map.getListMethodVerb()){
+
+        if (m.getName().equals(verb_method.getMethodName()) && 
             m.isAnnotationPresent(Url.class) && 
-            urlMapping.equals(((Url) m.getAnnotation(Url.class)).value())) {
+            urlMapping.equals(((Url) m.getAnnotation(Url.class)).value()) &&
+            verb_method.getVerbName().equalsIgnoreCase(request.getMethod())) {
             method = m;
+
+             String methodName =verb_method.getMethodName();
+             String verbMethod =verb_method.getVerbName();
 
             if(!request.getMethod().equalsIgnoreCase(verbMethod)){
                 throw new Exception("verbe imcompatible");
@@ -255,7 +280,6 @@ public class Util {
                 result = method.invoke(instance);
             } else {
                 // Vérifie si les paramètres nécessaires sont disponibles dans la requête
-               
                 List<Object> methodParameters = this.prepareParameters(m, request,response);
                 if (methodParameters.size() == m.getParameterCount()) {
                     result = method.invoke(instance, methodParameters.toArray(new Object[0]));
@@ -263,7 +287,6 @@ public class Util {
                     throw new Exception("Le nombre de paramètres est insuffisant pour la méthode " + methodName);
                 }
             }
-
             // Si la méthode est annotée avec @RestApi, convertir le résultat en JSON
             if (this.isRestApiMethode(method)) {
                    Gson gson = new Gson();
@@ -283,12 +306,99 @@ public class Util {
             break;
         }
            
+        }
     }
     if (method == null) {
-        throw new NoSuchMethodException("Méthode non trouvée : " + methodName);
+        throw new NoSuchMethodException("Méthode non trouvée : ");
     }
     return result;
     }
+
+*/
+
+/***------------------------------EXECUTE METHODE 2.0-------------------------------------------------------------------- */
+
+public Object executeMethod(Mapping map, String urlMapping, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        Class<?> myClass = Class.forName(map.getClassName());
+        Object instance = myClass.newInstance();
+        // Sous-fonction pour vérifier et configurer l'attribut MySession
+        this.checkControllerContainsAttributMySession(instance, request);
+        // Sous-fonction pour obtenir la méthode à exécuter
+        Method method = this.findMatchingMethod(map, urlMapping, request, myClass);
+        if (method == null) {
+            throw new NoSuchMethodException("Méthode non trouvée pour le mapping URL : " + urlMapping);
+        }
+        // Sous-fonction pour exécuter la méthode et retourner le résultat
+        Object result = this.invokeMethod(method, instance, request, response);
+        // Sous-fonction pour gérer le résultat (par exemple, convertir en JSON si nécessaire)
+        this.processResult(result, method, response);
+        return result;
+    }
+
+    // Sous-fonction 1 : Trouver la méthode correspondante
+    private Method findMatchingMethod(Mapping map, String urlMapping, HttpServletRequest request, Class<?> myClass) throws Exception {
+        Method method = null;
+
+        for (Method m : myClass.getMethods()) {
+            for (VerbMethod verbMethod : map.getListMethodVerb()) {
+                if (m.getName().equals(verbMethod.getMethodName()) &&
+                    m.isAnnotationPresent(Url.class) &&
+                    urlMapping.equals(((Url) m.getAnnotation(Url.class)).value()) &&
+                    verbMethod.getVerbName().equalsIgnoreCase(request.getMethod())) {
+                    /*
+                    if (!request.getMethod().equalsIgnoreCase(verbMethod.getVerbName())) {
+                        throw new Exception("Verbe incompatible");
+                    }*/
+                    method = m;
+                    break;
+                }
+            }
+            if (method != null) {
+                break;
+            }
+        }
+
+        return method;
+    }
+
+  private Object invokeMethod(Method method, Object instance, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        Object result = null;
+
+        if (method.getParameterCount() == 0) {
+            // Si la méthode n'a pas de paramètres
+            result = method.invoke(instance);
+        } else {
+            // Préparer les paramètres de la méthode
+            List<Object> methodParameters = this.prepareParameters(method, request, response);
+            if (methodParameters.size() == method.getParameterCount()) {
+                result = method.invoke(instance, methodParameters.toArray(new Object[0]));
+            } else {
+                throw new Exception("Le nombre de paramètres est insuffisant pour la méthode " + method.getName());
+            }
+        }
+
+        return result;
+}
+
+
+ // Sous-fonction 3 : Traiter le résultat de la méthode
+    private void processResult(Object result, Method method, HttpServletResponse response) throws Exception {
+        if (this.isRestApiMethode(method)) {
+            Gson gson = new Gson();
+            String jsonResponse = "";
+
+            if (result instanceof ModelView) {
+                ModelView modelView = (ModelView) result;
+                modelView.convertToJsonData();
+            } else {
+                jsonResponse = gson.toJson(result);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write(jsonResponse);
+            }
+        }
+    }
+
 
 
 
@@ -323,10 +433,11 @@ private boolean isRestApiMethode(Method m){
 
 
     public  Mapping  findMappingAssociateUrl(HashMap<String, Mapping> myHashMap,String pathInfo)throws Exception{
-        Mapping map = new Mapping();
+        Mapping map = null;
         for (String key : myHashMap.keySet()) {
             if(key.equals(pathInfo)){
                map = myHashMap.get(key);
+               break;
         }
      
     }
