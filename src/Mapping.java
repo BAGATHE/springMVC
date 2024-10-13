@@ -1,51 +1,28 @@
 package utility;
+import java.util.HashSet;
 public class Mapping {
-  private String className;
-  private String methodName;
-  private String verbe;
-  
- 
-  // Constructeur pour initialiser les attributs
-public Mapping (){ 
-}
+   private String className;
+    private HashSet<VerbMethod> listMethodVerb; 
 
-  public Mapping(String className, String methodName,String verbe) {
-
+    public Mapping(String className,HashSet<VerbMethod> listMethodVerb) {
         this.setClassName(className);
-        this.setMethodName(methodName);
-        this.setVerbe(verbe);
-  }
-// Getters et setters pour les attributs    
-  public String getClassName() {
+        this.setListMethodVerb(listMethodVerb);
+    }
+
+    public String getClassName() {
         return className;
-  }
+    }
+
     public void setClassName(String className) {
         this.className = className;
     }
 
-    public String getMethodName() {
-        return methodName;
+    public HashSet<VerbMethod> getListMethodVerb() {
+        return listMethodVerb;
     }
 
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
-    }
-
-    public String getVerbe(){
-      return verbe;
-    }
-
-    public void setVerbe(String verbe){
-      this.verbe = verbe;
-    }
-
-
-    @Override
-    public String toString() {
-        return "Mapping{" +
-                "className='" + className + '\'' +
-                ", methodName='" + methodName + '\'' +
-                '}';
+    public void setListMethodVerb(HashSet<VerbMethod> listMethodVerb) {
+        this.listMethodVerb = listMethodVerb;
     }
     
 }
