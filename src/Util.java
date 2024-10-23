@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 import annotation.Url;
 import annotation.Post;
 import java.util.HashSet;
+import jakarta.servlet.http.Part;
 
 public class Util {
     /*implementation de singleton pour avoir qu'une seul instance de Util*/
@@ -74,15 +75,23 @@ public class Util {
     }
 
     private String getAnnotationVerbeMethod(Method method){
-        String methode = "get";
        if(method.isAnnotationPresent(Post.class)){
-                    methode = "post";
-                    return methode;
+                    return "post";
        }
-       return methode;
+       return "get";
     }
 
 
+/**
+ * Recupere une liste de mappings (URL vers méthode controleur) en analysant les methodes des classes controleurs
+ * dans le package specifie. Seules les methodes annotees avec {@Url} sont considerees.
+ * 
+ * @param packageController Le package dans lequel rechercher les classes controleurs.
+ * @param servletConfig     La configuration du servlet, utilisee pour obtenir le contexte de l'application.
+ * @return Un {HashMap} ou chaque cle est une URL et la valeur est un objet {Mapping} contenant 
+ *         les methodes associées et leurs verbes HTTP correspondants.
+ * @throws Exception Si des erreurs sont détectées, comme des URL dupliquées avec le même verbe HTTP et méthode.
+ */
     public  HashMap<String, Mapping> getListControllerWithAnnotationMethodUrl(String packageController, ServletConfig servletConfig) throws Exception {
         List<Class<?>> controllers = this.getListeClass(packageController,servletConfig);
         HashMap<String, Mapping> myHashMap = new HashMap<>();
@@ -190,14 +199,11 @@ public class Util {
 
     private  List<Object> prepareParameters(Method methode, HttpServletRequest request,HttpServletResponse response) throws Exception {
         Paranamer paranamer = new AdaptiveParanamer();
-       
         String[] parameterNames = paranamer.lookupParameterNames(methode);
         Parameter[] arguments = methode.getParameters();
-        
         List<Object> resultats = new ArrayList<>();
-        
         Map<String, Object> objectInstances = new HashMap<>();
-        
+        String contentType = request.getContentType();
         for (int i = 0; i < arguments.length; i++) {
             Argument annotationArg = arguments[i].getAnnotation(Argument.class);
             String parameterName = parameterNames[i];
@@ -211,6 +217,14 @@ public class Util {
                 resultats.add(this.convertParamPrimitiveString(parameterValue, parameterType));
             }else if(parameterType.equals(MySession.class)){
                 resultats.add(new MySession(request.getSession()));
+            }else if(parameterType.equals(FileType.class)){
+
+                if (contentType != null && contentType.toLowerCase().startsWith("multipart/")) {
+                    resultats.add(new FileType(request.getPart(parameterName)));
+                 }else{
+                    throw  new Exception("ajouter  attribut multipart/enctype au balise form");
+                 }
+                
             } else {
                 final String finalParameterName = parameterName;
                 final Parameter finalArgument = arguments[i];
@@ -218,7 +232,6 @@ public class Util {
                 String[] paramterFullName = request.getParameterMap().keySet().stream()
                         .filter(key -> key.startsWith(finalParameterName + "."))
                         .toArray(String[]::new);
-
                 if (paramterFullName.length > 0) {
                     Object instance = objectInstances.computeIfAbsent(finalParameterName, key -> {
                         try {
@@ -477,6 +490,18 @@ private boolean isRestApiMethode(Method m){
         }
     }
 
+
+
+
+ public static String generateErreurHtml(HttpServletResponse response,String message){
+        StringBuilder msg = new StringBuilder();
+        msg.append("<html><body>");
+        msg.append("<h1>Status : "+ response.getStatus() +"</h1>");
+        msg.append("<p>"+ message +"</p>");
+        msg.append("</html></body>");
+
+        return msg.toString();
+    }
 
     
    
