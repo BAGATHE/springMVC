@@ -14,10 +14,12 @@ import java.util.HashMap;
 import jakarta.servlet.annotation.WebServlet;
 import java.lang.reflect.*;
 import com.google.gson.Gson;
+import jakarta.servlet.annotation.MultipartConfig;
 /**
  *
  * @author Pc
  */
+@MultipartConfig
 public class FrontController extends HttpServlet {
     HashMap<String, Mapping> myHashMap = new HashMap<>();
     public void initVariable() throws Exception{
@@ -63,8 +65,10 @@ public class FrontController extends HttpServlet {
             //util.isDuplicateUrlMapping(urlMapping ,"packageController", getServletConfig());
             Mapping map = util.findMappingAssociateUrl(myHashMap,urlMapping);
             
-            if (map.getClassName() == null) {
-                out.print("pas de mapping associe a cette url");
+            if (map == null) {
+                response.setContentType("text/html");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                out.write(Util.generateErreurHtml(response,"Pas mapping associe a cette URL"));
                 return ;
             }else{
                 util.checkControllerContainsAttributMySession(map.getClassName(),request);
@@ -72,7 +76,8 @@ public class FrontController extends HttpServlet {
 
                 if (result == null) {
                     out.print("result null");
-                return; 
+                    throw new Exception("response null");
+                   
                 }
 
                 if(util.isStringOrModelview(result)){
@@ -92,6 +97,9 @@ public class FrontController extends HttpServlet {
             e.getMessage();
             out.print(e.getMessage());
             System.err.println(e.getMessage());
+            response.setContentType("text/html");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.write(Util.generateErreurHtml(response,e.getMessage()));
             
         }
     }
@@ -109,11 +117,5 @@ public class FrontController extends HttpServlet {
             throws ServletException, IOException {
         processRequest(request, response);
     }
-
-    
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
 
 }
