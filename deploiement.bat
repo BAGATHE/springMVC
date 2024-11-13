@@ -6,7 +6,7 @@ set "JAR=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\jar"
 set "libParanamer=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\lib\paranamer-2.8.jar"
 set "libGson=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Framework\lib\gson-2.8.2.jar"
 set "CLASSPATH=E:\Licence_3\Semestre-5\M.Niaina\SpringMVC\Test\lib"
-set "jarName=sprint12-2658" 
+set "jarName=sprint13-2658" 
 
 if not exist "%JAR%" mkdir "%JAR%"
 cd "%SRC%"
