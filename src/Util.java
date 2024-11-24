@@ -321,7 +321,7 @@ private List<Object> prepareParameters(Method methode, HttpServletRequest reques
         if (parameterType.isPrimitive() || parameterType.equals(String.class) || parameterType.equals(MySession.class) || parameterType.equals(FileType.class)) {
             resultats.add(processPrimitiveOrSimpleParameter(parameterType, parameterName, request, contentType));
         } else {
-            resultats.add(populateComplexParameter(parameterName, arguments[i], request, validationErrors));
+            resultats.add(convertParameterToObject(parameterName, arguments[i], request, validationErrors));
         }
     }
 
@@ -394,7 +394,7 @@ private Object processPrimitiveOrSimpleParameter(Class<?> parameterType, String 
  * @return une instance du paramètre complexe remplie avec des valeurs provenant de la requête.
  * @throws Exception si l'instance du paramètre ne peut pas être créée.
  */
-private Object populateComplexParameter(String parameterName, Parameter argument, HttpServletRequest request, StringBuilder validationErrors) throws Exception {
+private Object convertParameterToObject(String parameterName, Parameter argument, HttpServletRequest request, StringBuilder validationErrors) throws Exception {
     Map<String, Object> objectInstances = new HashMap<>();
     String[] parameterFullNames = request.getParameterMap().keySet().stream()
             .filter(key -> key.startsWith(parameterName + "."))
