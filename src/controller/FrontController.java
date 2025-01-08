@@ -12,6 +12,7 @@ import annotation.*;
 import utility.Util;
 import utility.Mapping;
 import utility.ModelView;
+import utility.MySession;
 import java.util.HashMap;
 import jakarta.servlet.annotation.WebServlet;
 import java.lang.reflect.*;
@@ -74,22 +75,25 @@ public class FrontController extends HttpServlet {
                 out.write(Util.generateErreurHtml(response, "Pas mapping associe a cette URL"));
                 return;
             } else {
+                MySession session = new MySession(request.getSession());
                 Method methode = util.getMethode(map.getClassName(), map.getListMethodVerb(), urlMapping,
                         request.getMethod());
 
-                util.processValidationAndForward(methode, request, response);
+                if (util.isExecutable(methode, session)) {
+                    util.processValidationAndForward(methode, request, response);
 
-                Object result = util.executeMethod(map, methode, request, response);
+                    Object result = util.executeMethod(map, methode, request, response);
 
-                if (util.isStringOrModelview(result)) {
-                    if (result instanceof ModelView) {
-                        ModelView modelview = (ModelView) result;
-                        util.redirectModelView(request, response, modelview);
+                    if (util.isStringOrModelview(result)) {
+                        if (result instanceof ModelView) {
+                            ModelView modelview = (ModelView) result;
+                            util.redirectModelView(request, response, modelview);
+                        } else {
+                            throw new Exception(" ERREUR 500 la methode est de type string => " + result);
+                        }
                     } else {
-                        throw new Exception(" ERREUR 500 la methode est de type string => " + result);
+                        throw new Exception(" ERREUR 500 la methode n'est pas de type string ou modelView " + result);
                     }
-                } else {
-                    throw new Exception(" ERREUR 500 la methode n'est pas de type string ou modelView " + result);
                 }
             }
         } catch (Exception e) {

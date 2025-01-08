@@ -1,10 +1,14 @@
 package utility;
+
+import authentification.UserInterface;
 import jakarta.servlet.http.HttpSession;
+
 public class MySession {
     private HttpSession session;
 
     // Constructeur vide
-    public MySession() {}
+    public MySession() {
+    }
 
     // Constructeur avec HttpSession
     public MySession(HttpSession session) {
@@ -33,6 +37,11 @@ public class MySession {
     // Méthode delete(String key)
     public void delete(String key) {
         session.removeAttribute(key);
+    }
+
+    public void login(String userKey, UserInterface userInterface) {
+        this.add("userKey", userKey);
+        this.add(userKey, userInterface);
     }
 
 }

@@ -30,9 +30,12 @@ import annotation.Email;
 import annotation.ErrorValidation;
 import annotation.Argument;
 import annotation.Numeric;
+import annotation.Authentified;
+import annotation.UserRole;
 import annotation.Required;
 import java.sql.Timestamp;
 import java.sql.Date;
+import authentification.UserInterface;
 
 public class Util {
     /* implementation de singleton pour avoir qu'une seul instance de Util */
@@ -990,6 +993,31 @@ public class Util {
             RequestDispatcher dispatcher = requestWrapper.getRequestDispatcher(url);
             dispatcher.forward(requestWrapper, response);
         }
+    }
+
+    public boolean isExecutable(Method method, MySession session) throws Exception {
+        if (method.isAnnotationPresent(Authentified.class)) {
+
+            String userKey = (String) session.get("userKey");
+            if (userKey == null) {
+                throw new Exception("Acces refuse, il faut etre connectee!");
+            }
+            UserInterface user = (UserInterface) session.get(userKey);
+            if (method.isAnnotationPresent(UserRole.class)) {
+                UserRole methodRole = method.getAnnotation(UserRole.class);
+                String[] roles = methodRole.roles();
+                String[] userRoles = user.getRoles();
+                for (String role : userRoles) {
+                    for (String authorizedRole : roles) {
+                        if (role.equalsIgnoreCase(authorizedRole)) {
+                            return true;
+                        }
+                    }
+                }
+                throw new Exception("Acces refuse, methode non autorisee!");
+            }
+        }
+        return true;
     }
 
 }
