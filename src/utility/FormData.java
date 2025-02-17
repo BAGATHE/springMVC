@@ -1,6 +1,6 @@
 package utility;
+import jakarta.servlet.http.*;
 import jakarta.servlet.*;
-
 public class FormData {
     private HttpServletRequest request;
 
