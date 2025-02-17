@@ -895,6 +895,9 @@ public class Util {
             } else if (parameterType.equals(MySession.class)) {
                 value = new MySession(request.getSession());
                 estObjet = true;
+            }else if (parameterType.equals(FormData.class)) {
+                value = new FormData(request);
+                estObjet = true;
             } else if (parameterType.equals(FileType.class)) {
                 try {
                     if (contentType != null && contentType.toLowerCase().startsWith("multipart/")) {
@@ -995,16 +998,16 @@ public class Util {
         }
     }
 
-    public boolean isExecutable(Method method, MySession session) throws Exception {
-        if (method.isAnnotationPresent(Authentified.class)) {
+    public boolean isExecutable(AnnotatedElement annotatedElement, MySession session) throws Exception {
+        if (annotatedElement.isAnnotationPresent(Authentified.class)) {
 
             String userKey = (String) session.get("userKey");
             if (userKey == null) {
                 throw new Exception("Acces refuse, il faut etre connectee!");
             }
             UserInterface user = (UserInterface) session.get(userKey);
-            if (method.isAnnotationPresent(UserRole.class)) {
-                UserRole methodRole = method.getAnnotation(UserRole.class);
+            if (annotatedElement.isAnnotationPresent(UserRole.class)) {
+                UserRole methodRole = annotatedElement.getAnnotation(UserRole.class);
                 String[] roles = methodRole.roles();
                 String[] userRoles = user.getRoles();
                 for (String role : userRoles) {
