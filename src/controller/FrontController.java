@@ -97,14 +97,18 @@ public class FrontController extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            e.getStackTrace();
-            e.getMessage();
-            out.print(e.getMessage());
-            System.err.println(e.getMessage());
-            response.setContentType("text/html");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write(Util.generateErreurHtml(response, e.getMessage()));
+            Throwable cause=e.getCause();
+            if (cause!=null) {
+                e.printStackTrace();
+                response.setContentType("text/html");
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.write(Util.generateErreurHtml(response,cause.toString()));
+            }else{
+                e.printStackTrace();
+                response.setContentType("text/html");
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.write(Util.generateErreurHtml(response,e.toString()));
+            }
 
         }
     }
