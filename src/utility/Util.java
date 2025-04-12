@@ -287,7 +287,7 @@ public class Util {
             Class<?> parameterType = arguments[i].getType();
 
             if (parameterType.isPrimitive() || parameterType.equals(String.class)
-                    || parameterType.equals(MySession.class) || parameterType.equals(FileType.class)) {
+                    || parameterType.equals(MySession.class) || parameterType.equals(FileType.class) || parameterType.equals(FormData.class)) {
                 resultats.add(processPrimitiveOrSimpleParameter(parameterType, parameterName, request, contentType));
             } else {
                 resultats.add(convertParameterToObject(parameterName, arguments[i], request, validationErrors));
@@ -320,7 +320,9 @@ public class Util {
             return convertParamPrimitiveString(parameterName, parameterValue, parameterType);
         } else if (parameterType.equals(MySession.class)) {
             return new MySession(request.getSession());
-        } else if (parameterType.equals(FileType.class)) {
+        } else if (parameterType.equals(FormData.class)) {
+            return new FormData(request);
+        }else if (parameterType.equals(FileType.class)) {
             if (contentType != null && contentType.toLowerCase().startsWith("multipart/")) {
                 return new FileType(request.getPart(parameterName));
             } else {
